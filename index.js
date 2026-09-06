@@ -33,6 +33,7 @@ let CONFIG = {
   appId: 'app',
   version: '1.0.0',
   endpoint: 'http://100.107.27.3:8091/api/bug-reports',
+  onTools: null,
 };
 
 function postBug({ endpoint, appId, version, note, screenshot }) {
@@ -130,7 +131,7 @@ function FlayOverlay({ snapUri }) {
   const [toast, setToast] = useState(null);
   const [bugs, setBugs] = useState(null);
   const [loadingBugs, setLoadingBugs] = useState(false);
-  const { appName, appId, version, endpoint } = CONFIG;
+  const { appName, appId, version, endpoint, onTools } = CONFIG;
 
   const scale = useRef(new Animated.Value(1.35)).current;
   const opacity = useRef(new Animated.Value(0)).current;
@@ -142,6 +143,10 @@ function FlayOverlay({ snapUri }) {
   }, [scale, opacity]);
 
   const close = useCallback(() => { nativeDismiss(); }, []);
+  const openTools = useCallback(async () => {
+    if (typeof onTools !== 'function') return;
+    try { await onTools(); } catch {}
+  }, [onTools]);
 
   const loadBugs = useCallback(async () => {
     setLoadingBugs(true);
@@ -206,14 +211,14 @@ function FlayOverlay({ snapUri }) {
                 </View>
               )}
             </Animated.View>
-            <View style={{ position: 'absolute', right: 14, top: '46%', alignItems: 'center', gap: 4 }}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Tools" onPress={openTools} style={{ position: 'absolute', right: 14, top: '46%', alignItems: 'center', gap: 4 }}>
               <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: T.toolsBlue, alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ color: '#FFF', fontSize: 22 }}>⚙</Text>
               </View>
               <View style={{ paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.55)' }}>
                 <Text style={{ color: T.text, fontSize: 11 }}>Tools</Text>
               </View>
-            </View>
+            </Pressable>
           </View>
         )}
 
