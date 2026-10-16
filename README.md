@@ -4,29 +4,39 @@ Shake-triggered in-app feedback overlay for Expo / React Native — bug reports 
 
 > Keywords: expo bug reporter, react-native bug report with screenshots, in-app feedback SDK, shake to report bug, expo config plugin, crash reporting with screenshot, feature request board.
 
+![Bug report with screenshot demo](https://images.openai.com/static-rsc-4/RNwSQFnm7oYPOOhbqiVKqOOAPLnsnnxg0s5eUb7WSiDKAuJHFlU6D8ZeopQW_wMqNHchTFXx6slMf9juW8udSyuNZf4O3aiUiBOZBKkYOZScbb8LbRpFJxRSZsqCBtWB5kvfF_Wef7UPwAG9c6WxWHBVqKuB8Pt19_e4Io-1Hik?purpose=inline)
+
 ## Install
 
-```json
-{
-  "dependencies": {
-    "flay": "github:aruninf/App-bug-reporter-with-screenshots#v0.4.0"
-  }
-}
-```
-
 ```bash
-npm install
+npm install app-bug-reporter-with-screenshots
+# or pin to GitHub:
+# npm install github:aruninf/App-bug-reporter-with-screenshots#main
 npx expo prebuild --clean
 ```
 
 The Expo config plugin (`./app.plugin.js`) injects the iOS native sources (`FlayDeck.{h,m}`, `FlayBridge.{h,m}`) into the generated `ios/` project on every prebuild — never copy them manually.
 
-## Wire up
+## Integrate (host app, 4 steps)
 
-Wrap your root component with `FlayProvider`:
+### 1. Register the Expo plugin
+
+In `app.config.ts` / `app.json`:
+
+```ts
+export default {
+  expo: {
+    plugins: ["app-bug-reporter-with-screenshots"]
+  }
+};
+```
+
+Then run `npx expo prebuild --clean` so `FlayDeck` + `FlayBridge` land in the native project.
+
+### 2. Wrap your root with `FlayProvider`
 
 ```jsx
-import { FlayProvider } from "flay";
+import { FlayProvider } from "app-bug-reporter-with-screenshots";
 
 function AppInner() { /* ... */ }
 
@@ -34,10 +44,11 @@ export default function App() {
   return (
     <FlayProvider
       config={{
-        appName: "ToneAdapt",
-        appId: "toneadapt",
-        version: "1.0.5",
-        endpoint: "http://100.107.27.3:8091/api/bug-reports",
+        appName: "MyApp",
+        appId: "myapp",
+        version: "1.0.0",
+        endpoint: "https://api.example.com/api/bug-reports",
+        // abInfo: async () => [...], // optional: extra rows in the overlay
       }}
     >
       <AppInner />
@@ -46,7 +57,25 @@ export default function App() {
 }
 ```
 
-`endpoint` must be the canonical Friday cockpit-unified server route. Do not hardcode a default in app code — pass it via config.
+Config fields: `appName`, `appId`, `version`, `endpoint` (required). `endpoint` must be the canonical server route ending in `/api/bug-reports` — pass it via config, never hardcode a default. Uncaught JS errors auto-POST to `<apiBase>/api/app-errors` with a screenshot (once per error per session).
+
+### 3. Stand up the backend (contract)
+
+POST `{appId, version, note, screenshot, source, ts}` to `<endpoint>`. Response shape:
+
+```json
+{ "ok": true, "id": "<bug-id>" }
+```
+
+Anything else (HTTP non-2xx, network error, JSON parse fail) triggers the retry queue: capped at 10 in-memory entries, replayed on every app foreground (`AppState` → `active`), with a toast per attempt.
+
+### 4. Trigger it on device
+
+- **Shake**: open overlay
+- **Screenshot**: open overlay (iOS user-triggered screenshot detection)
+- **Pinch (3-finger)**: developer fallback
+
+All handled in `FlayBridge.m` — no JS-side gesture handlers required. Programmatic control: `useFlay()` → `{ open, close }`, or `setFlaySuppressed(true)` to silence it (e.g. on login screens).
 
 ## Required Info.plist key
 
@@ -60,48 +89,32 @@ ios: {
 }
 ```
 
-Otherwise ATS blocks the request and the user sees "Hata. Tekrar dene." with no diagnostic.
+Otherwise ATS blocks the request and the submit silently queues for retry.
 
 ## Compatibility matrix
 
-| Flay      | Expo SDK | React Native | React |
+| Package   | Expo SDK | React Native | React |
 |-----------|----------|--------------|-------|
+| v0.7.x    | 53+      | 0.74+        | 18+   |
 | v0.4.0    | 53+      | 0.74+        | 18+   |
 | v0.3.0    | 52+      | 0.73+        | 18+   |
 
-`peerDependencies` of v0.4.0+ enforce the floor — `npm install` fails loudly on older runtimes rather than producing a runtime crash.
+`peerDependencies` enforce the floor — `npm install` fails loudly on older runtimes rather than producing a runtime crash.
 
-## v0.4.0 — retry + toast (HARD RULE fix)
+## Publish to npm (maintainers)
 
-Bug submit no longer fails silently when the endpoint is unreachable:
+Package name on npm (lowercase): `app-bug-reporter-with-screenshots`. GitHub repo keeps capitals; npm does not allow them.
 
-1. Failed POSTs are queued in-memory (capped at 10 entries).
-2. Queue is replayed on every app foreground (`AppState` → `active`).
-3. Each submit attempt shows a brief toast: `Gönderildi`, `Bağlanılamadı — tekrar denenecek`, or `Tekrar denendi: <N> gönderildi`.
-
-Queue is in-memory only (lost on app kill) — for durable retry, future work will persist to AsyncStorage.
-
-## v0.3.x → v0.4.0 migration
-
-No API change. Just bump the tag, run `npm install`, `npx expo prebuild --clean`, rebuild.
-
-## Trigger gestures
-
-- **Shake**: open Flay overlay
-- **Screenshot**: open Flay overlay (iOS user-triggered screenshot detection)
-- **Pinch (3-finger)**: developer fallback when the device gesture is unreliable
-
-All handled in `FlayBridge.m` — no JS-side gesture handlers required.
-
-## Bug submit endpoint contract
-
-POST `{appId, version, note, screenshot, source, ts}` to `<endpoint>`. Response shape:
-
-```json
-{ "ok": true, "id": "<bug-id>" }
+```bash
+npm login
+# bump version (pick one):
+npm version patch   # 0.7.8 -> 0.7.9
+# npm version minor # 0.7.8 -> 0.8.0
+npm publish --access public
+npm view app-bug-reporter-with-screenshots version
 ```
 
-Anything else (HTTP non-2xx, network error, JSON parse fail) triggers the retry queue.
+Consumers then get it via `npm install app-bug-reporter-with-screenshots` — no GitHub tag needed. Keep the GitHub release tag in sync (`git tag v0.7.9 && git push --tags`) so the `github:aruninf/...#vX` install path keeps working.
 
 ## License
 
