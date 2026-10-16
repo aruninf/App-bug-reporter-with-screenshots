@@ -4,6 +4,11 @@
   "description": "Shake-triggered in-app feedback overlay for Expo / React Native — bug reports with screenshots, feature voting, and auto-captured JS crash reports.",
   "main": "index.js",
   "license": "MIT",
+  "author": "aruninf",
+  "homepage": "https://github.com/aruninf/App-bug-reporter-with-screenshots",
+  "bugs": {
+    "url": "https://github.com/aruninf/App-bug-reporter-with-screenshots/issues"
+  },
   "keywords": [
     "expo",
     "react-native",
