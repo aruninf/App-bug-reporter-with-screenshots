@@ -1,12 +1,25 @@
 {
-  "name": "flay",
+  "name": "app-bug-reporter-with-screenshots",
   "version": "0.7.8",
-  "description": "Flay — in-app overlay (snapshot card + admin-only bug reporter + public feature-request board) for React Native / Expo apps.",
+  "description": "Shake-triggered in-app feedback overlay for Expo / React Native — bug reports with screenshots, feature voting, and auto-captured JS crash reports.",
   "main": "index.js",
   "license": "MIT",
+  "keywords": [
+    "expo",
+    "react-native",
+    "expo-config-plugin",
+    "bug-reporter",
+    "bug-report",
+    "screenshots",
+    "feedback",
+    "feature-requests",
+    "shake",
+    "crash-reporting",
+    "in-app-feedback"
+  ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Pera-Labs/flay.git"
+    "url": "git+https://github.com/aruninf/App-bug-reporter-with-screenshots.git"
   },
   "expo": {
     "plugin": "./app.plugin.js"

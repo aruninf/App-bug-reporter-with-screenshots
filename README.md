@@ -1,13 +1,15 @@
-# Flay
+# App-bug-reporter-with-screenshots
 
-In-app overlay for React Native / Expo apps — snapshot card, bug list, bug reporter. Triggered by shake / screenshot / pinch gesture (handled by the FlayBridge native module).
+Shake-triggered in-app feedback overlay for Expo / React Native — bug reports with screenshots, feature voting, and auto-captured JS crash reports. Shake, screenshot, or 3-finger pinch to open the overlay (handled by the FlayBridge native module).
+
+> Keywords: expo bug reporter, react-native bug report with screenshots, in-app feedback SDK, shake to report bug, expo config plugin, crash reporting with screenshot, feature request board.
 
 ## Install
 
 ```json
 {
   "dependencies": {
-    "flay": "github:Pera-Labs/flay#v0.4.0"
+    "flay": "github:aruninf/App-bug-reporter-with-screenshots#v0.4.0"
   }
 }
 ```
